@@ -75,7 +75,20 @@ const Words = (() => {
       .map(([week, words]) => ({ week, words: words.sort((a, b) => a.word.localeCompare(b.word, 'en-GB')) }));
   }
 
-  return { STATUSES, KNOWN, MAX_PER_ADD, MAX_LENGTH, isStatus, label, parse, tricky, weeks };
+  /**
+   * One week's words in their groups: each spelling rule (alphabetical) with its words, then the words with no rule.
+   * @param {ReadonlyArray<Word>} words @returns {Array<{ note: string|null, words: Word[] }>}
+   */
+  function byNote(words) {
+    /** @type {Map<string, Word[]>} */
+    const groups = new Map();
+    for (const w of words) groups.set(w.note || '', [...(groups.get(w.note || '') ?? []), w]);
+    const named = [...groups.entries()].filter(([note]) => note !== '').sort((a, b) => a[0].localeCompare(b[0], 'en-GB'));
+    return [...named, ...(groups.has('') ? [['', groups.get('')]] : [])]
+      .map(([note, list]) => ({ note: /** @type {string} */ (note) || null, words: /** @type {Word[]} */ (list) }));
+  }
+
+  return { STATUSES, KNOWN, MAX_PER_ADD, MAX_LENGTH, isStatus, label, parse, tricky, weeks, byNote };
 })();
 
 export { Words };

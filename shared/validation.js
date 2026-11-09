@@ -15,7 +15,7 @@ import { Words } from './words.js';
  */
 const Validation = (() => {
   const ID = /^[A-Za-z0-9-]{8,80}$/;
-  const LIMITS = Object.freeze({ child: 40, name: 80, note: 300 });
+  const LIMITS = Object.freeze({ child: 40, name: 80, note: 300, rule: 100 });
 
   /** @param {unknown} value */
   const isId = (value) => typeof value === 'string' && ID.test(value);
@@ -155,7 +155,7 @@ const Validation = (() => {
 
   /**
    * Words pasted for a child and a week (any day in the week; it is moved to the Monday). Up to a few weeks ahead.
-   * @param {any} input  { child_id, week?, text }
+   * @param {any} input  { child_id, week?, text, note? }  note: the spelling rule the words share
    * @param {{ children: ReadonlyArray<Child>, today: string }} known
    */
   function words(input, known) {
@@ -172,7 +172,8 @@ const Validation = (() => {
     if (parsed.bad.length) c.add('text', 'INVALID', `${parsed.bad.slice(0, 3).map((b) => `"${b}"`).join(', ')}${parsed.bad.length > 3 ? ' and more' : ''} ${parsed.bad.length === 1 ? 'is' : 'are'} not ${parsed.bad.length === 1 ? 'a word' : 'words'}: use letters only, one word at a time`);
     if (parsed.words.length === 0 && parsed.bad.length === 0) c.add('text', 'REQUIRED', 'add at least one word');
     if (parsed.words.length > Words.MAX_PER_ADD) c.add('text', 'TOO_MANY', `at most ${Words.MAX_PER_ADD} words at a time`);
-    return { value: { child_id, week, words: parsed.words }, errors: c.errors };
+    const note = c.text('note', input.note, LIMITS.rule, false);
+    return { value: { child_id, week, words: parsed.words, note }, errors: c.errors };
   }
 
   return { LIMITS, isId, child, subject, section, topic, progress, words };

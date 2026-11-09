@@ -212,3 +212,5 @@ a.card-link:active { background: var(--soft); }
 .word.s1 .word-text { color: var(--soon); }
 .word.s2 .word-text { color: var(--ok); }
 .word .segmented button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.word-group + .word-group { margin-top: 6px; }
+.word-text .tag { font-size: 12px; font-weight: 600; margin-left: 8px; white-space: normal; }

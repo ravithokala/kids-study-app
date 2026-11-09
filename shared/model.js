@@ -16,7 +16,7 @@ const Model = (() => {
   const TOPIC_FIELDS = Object.freeze(['topic_id', 'section_id', 'name', 'year_group', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
   const PROGRESS_FIELDS = Object.freeze(['progress_id', 'child_id', 'topic_id', 'level', 'score', 'on', 'note', 'deleted', 'version', 'updated_at', 'updated_by']);
   /** A spelling word sent by school for one child, for one week (the Monday). status: see domain/words.js. */
-  const WORD_FIELDS = Object.freeze(['word_id', 'child_id', 'word', 'week', 'status', 'practised_on', 'deleted', 'version', 'updated_at', 'updated_by']);
+  const WORD_FIELDS = Object.freeze(['word_id', 'child_id', 'word', 'week', 'status', 'practised_on', 'deleted', 'version', 'updated_at', 'updated_by', 'note']);
 
   /** The two tracks. These are fixed; subjects, sections and topics under them are data. */
   const TRACKS = Object.freeze([

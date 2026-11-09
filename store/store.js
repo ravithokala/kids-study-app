@@ -183,12 +183,12 @@ export function removeProgress(id) {
 
 /**
  * Adds the words pasted for a child and a week (any day in the week).
- * @param {string} childId @param {string|null} week @param {string} text @param {string} today
+ * @param {string} childId @param {string|null} week @param {string} text @param {string|null} note the spelling rule they share @param {string} today
  */
-export function addWords(childId, week, text, today) {
-  const checked = Validation.words({ child_id: childId, week, text }, { children: every(data.children), today });
+export function addWords(childId, week, text, note, today) {
+  const checked = Validation.words({ child_id: childId, week, text, note }, { children: every(data.children), today });
   if (checked.errors.length) return Promise.resolve({ ok: /** @type {const} */ (false), errors: checked.errors });
-  return send('words.add', { child_id: childId, week, text });
+  return send('words.add', { child_id: childId, week, text, note });
 }
 
 /** @param {string} id @param {0|1|2} status */

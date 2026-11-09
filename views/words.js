@@ -26,18 +26,20 @@ export function wordsScreen(main) {
   const thisWeek = Dates.weekStart(today());
 
   const text = /** @type {HTMLTextAreaElement} */ (el('textarea', { rows: 4, placeholder: 'Paste or type the words: one per line, or separated by spaces or commas', 'aria-label': 'Words' }));
+  const note = input('text', null, { maxlength: 100, placeholder: 'Optional, e.g. -cious: the /shuhs/ sound', autocomplete: 'off' });
   const week = input('date', thisWeek, { max: Dates.addDays(today(), 21) });
   const add = /** @type {HTMLButtonElement} */ (el('button', { class: 'primary', type: 'button' }, 'Add words'));
   const messages = el('div', { class: 'messages' });
   add.addEventListener('click', async () => {
-    const r = await busy(add, () => store.addWords(child.child_id, week.get(), text.value, today()));
+    const r = await busy(add, () => store.addWords(child.child_id, week.get(), text.value, note.get(), today()));
     if (!r.ok) { showIssues(messages, { errors: r.errors, warnings: [] }); return; }
+    text.value = '';
     toast(`${r.data.added} word${r.data.added === 1 ? '' : 's'} added${r.data.skipped ? `, ${r.data.skipped} already there` : ''}.`);
   });
 
-  /** One word: its text, three buttons to mark it, and a remove button. @param {Word} w */
-  const row = (w) => el('li', { class: `word s${w.status}` },
-    el('span', { class: 'word-text' }, w.word),
+  /** One word: its text, three buttons to mark it, and a remove button. @param {Word} w @param {boolean} [showNote] the rule as a tag (the Tricky list, where words are not grouped) */
+  const row = (w, showNote = false) => el('li', { class: `word s${w.status}` },
+    el('span', { class: 'word-text' }, w.word, w.note && showNote ? el('span', { class: 'tag' }, w.note) : ''),
     el('span', { class: 'segmented small', role: 'group', 'aria-label': `${w.word}: how well known` }, Words.STATUSES.map((s) =>
       el('button', { type: 'button', 'aria-pressed': String(w.status === s.value), onclick: async () => {
         if (w.status === s.value) return;
@@ -56,13 +58,15 @@ export function wordsScreen(main) {
     childBar(() => wordsScreen(main)),
     el('section', { class: 'card' },
       el('h2', {}, 'Add the school’s words'),
-      el('div', { class: 'form flat' }, field('Words', text), field('Week starting', week.node), messages, el('div', { class: 'actions' }, add))),
+      el('div', { class: 'form flat' }, field('Words', text), field('Spelling rule or note', note.node), field('Week starting', week.node), messages, el('div', { class: 'actions' }, add))),
     lists.tricky.length ? el('section', { class: 'card' },
       el('div', { class: 'title-row' }, el('h2', {}, 'Tricky words'), el('span', { class: 'count' }, String(lists.tricky.length))),
       el('p', { class: 'hint' }, 'Not yet known, from every week. Mark a word “Know it” and it leaves this list.'),
-      el('ul', { class: 'words' }, lists.tricky.map(row))) : '',
+      el('ul', { class: 'words' }, lists.tricky.map((w) => row(w, true)))) : '',
     ...(weeks.length === 0 ? [empty(`No words for ${child.name} yet.`)] : weeks.map((g) => el('section', { class: 'card' },
       el('div', { class: 'title-row' }, el('h2', {}, g.week === thisWeek ? 'This week' : `Week of ${uk(g.week)}`), el('span', { class: 'count' }, `${known(g.words)} of ${g.words.length} known`)),
-      el('ul', { class: 'words' }, g.words.map(row))))),
+      Words.byNote(g.words).map((group) => el('div', { class: 'word-group' },
+        group.note ? el('h3', { class: 'check-group' }, group.note) : (g.words.some((w) => w.note) ? el('h3', { class: 'check-group' }, 'Other words') : ''),
+        el('ul', { class: 'words' }, group.words.map((w) => row(w)))))))),
     lists.weeks.length > weeks.length ? el('p', { class: 'muted small' }, `${lists.weeks.length - weeks.length} earlier weeks not shown; tricky words from them are listed above.`) : '');
 }
