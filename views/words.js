@@ -12,6 +12,31 @@ import { childBar, empty, kidClass, yearText } from './parts.js';
 const WEEKS_SHOWN = 8;
 
 /**
+ * What has been typed in the add form but not added yet. The screen is redrawn whenever the data refreshes (coming back to
+ * the app after another tab, every five minutes), which would empty the form: so it is kept here, and in this tab's session
+ * storage in case the browser reloads the page while the app is in the background.
+ * @typedef {{ text: string, note: string, week: string|null }} Draft
+ */
+const DRAFT_KEY = 'ks.words-draft';
+/** @type {Draft|null} */
+let draft = null;
+
+/** @returns {Draft} */
+function loadDraft() {
+  if (draft) return draft;
+  draft = { text: '', note: '', week: null };
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null');
+    if (saved && typeof saved.text === 'string' && typeof saved.note === 'string') draft = { text: saved.text, note: saved.note, week: typeof saved.week === 'string' ? saved.week : null };
+  } catch (e) { /* no saved draft */ }
+  return draft;
+}
+
+function saveDraft() {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) { /* kept in memory only */ }
+}
+
+/**
  * The weekly spelling words from school, for the child on screen: paste the week's list, mark each word as practised,
  * and see the tricky ones (not yet known) from every week.
  * @param {HTMLElement} main
@@ -24,16 +49,29 @@ export function wordsScreen(main) {
   }
   const lists = store.wordLists(child.child_id);
   const thisWeek = Dates.weekStart(today());
+  const mine = loadDraft();
+  // The field being typed in, so it keeps the cursor after a redraw.
+  const active = document.activeElement;
+  const focused = active instanceof HTMLElement && active.dataset.draft ? { name: active.dataset.draft, at: /** @type {HTMLInputElement} */ (active).selectionStart } : null;
 
-  const text = /** @type {HTMLTextAreaElement} */ (el('textarea', { rows: 4, placeholder: 'Paste or type the words: one per line, or separated by spaces or commas', 'aria-label': 'Words' }));
-  const note = input('text', null, { maxlength: 100, placeholder: 'Optional, e.g. -cious: the /shuhs/ sound', autocomplete: 'off' });
-  const week = input('date', thisWeek, { max: Dates.addDays(today(), 21) });
+  const text = /** @type {HTMLTextAreaElement} */ (el('textarea', { rows: 4, 'data-draft': 'text', placeholder: 'Paste or type the words: one per line, or separated by spaces or commas', 'aria-label': 'Words' }));
+  const note = input('text', null, { 'data-draft': 'note', maxlength: 100, placeholder: 'Optional, e.g. -cious: the /shuhs/ sound', autocomplete: 'off' });
+  const week = input('date', mine.week ?? thisWeek, { 'data-draft': 'week', max: Dates.addDays(today(), 21) });
+  text.value = mine.text;
+  note.node.value = mine.note;
+  text.addEventListener('input', () => { mine.text = text.value; saveDraft(); });
+  note.node.addEventListener('input', () => { mine.note = note.node.value; saveDraft(); });
+  week.node.addEventListener('change', () => { mine.week = week.node.value || null; saveDraft(); });
   const add = /** @type {HTMLButtonElement} */ (el('button', { class: 'primary', type: 'button' }, 'Add words'));
   const messages = el('div', { class: 'messages' });
   add.addEventListener('click', async () => {
     const r = await busy(add, () => store.addWords(child.child_id, week.get(), text.value, note.get(), today()));
     if (!r.ok) { showIssues(messages, { errors: r.errors, warnings: [] }); return; }
-    text.value = '';
+    // Added: the words and the rule are cleared (the next group has its own rule); the week stays.
+    mine.text = '';
+    mine.note = '';
+    saveDraft();
+    wordsScreen(main);
     toast(`${r.data.added} word${r.data.added === 1 ? '' : 's'} added${r.data.skipped ? `, ${r.data.skipped} already there` : ''}.`);
   });
 
@@ -69,4 +107,9 @@ export function wordsScreen(main) {
         group.note ? el('h3', { class: 'check-group' }, group.note) : (g.words.some((w) => w.note) ? el('h3', { class: 'check-group' }, 'Other words') : ''),
         el('ul', { class: 'words' }, group.words.map((w) => row(w)))))))),
     lists.weeks.length > weeks.length ? el('p', { class: 'muted small' }, `${lists.weeks.length - weeks.length} earlier weeks not shown; tricky words from them are listed above.`) : '');
+  if (focused) {
+    const back = /** @type {HTMLInputElement|null} */ (main.querySelector(`[data-draft="${focused.name}"]`));
+    back?.focus();
+    if (back && focused.at !== null && 'setSelectionRange' in back && back.type !== 'date') back.setSelectionRange(focused.at, focused.at);
+  }
 }
