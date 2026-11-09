@@ -17,6 +17,11 @@ const WEEKS_SHOWN = 8;
  * storage in case the browser reloads the page while the app is in the background.
  * @typedef {{ text: string, note: string, week: string|null }} Draft
  */
+/** Words whose status is being saved. */
+const pending = new Set();
+/** The lists ('tricky', or a week) showing remove buttons. */
+const editing = new Set();
+
 const DRAFT_KEY = 'ks.words-draft';
 /** @type {Draft|null} */
 let draft = null;
@@ -75,19 +80,42 @@ export function wordsScreen(main) {
     toast(`${r.data.added} word${r.data.added === 1 ? '' : 's'} added${r.data.skipped ? `, ${r.data.skipped} already there` : ''}.`);
   });
 
-  /** One word: its text, three buttons to mark it, and a remove button. @param {Word} w @param {boolean} [showNote] the rule as a tag (the Tricky list, where words are not grouped) */
-  const row = (w, showNote = false) => el('li', { class: `word s${w.status}` },
-    el('span', { class: 'word-text' }, w.word, w.note && showNote ? el('span', { class: 'tag' }, w.note) : ''),
-    el('span', { class: 'segmented small', role: 'group', 'aria-label': `${w.word}: how well known` }, Words.STATUSES.map((s) =>
-      el('button', { type: 'button', 'aria-pressed': String(w.status === s.value), onclick: async () => {
-        if (w.status === s.value) return;
-        const r = await store.markWord(w.word_id, s.value);
+  /**
+   * One word: the word, a status pill (tap to go Not yet, Getting there, Know it, and round again), a quick tick for Know it
+   * (tap it again to take it back to Not yet), and, while its list is being edited, a remove button. A word being saved ignores
+   * further taps, so a quick second tap cannot send a stale version.
+   * @param {Word} w @param {boolean} [showNote] the rule as a tag (the Tricky list, where words are not grouped) @param {boolean} [editingNow]
+   */
+  const row = (w, showNote = false, editingNow = false) => {
+    /** @param {0|1|2} status */
+    const mark = async (status) => {
+      if (pending.has(w.word_id)) return;
+      pending.add(w.word_id);
+      try {
+        const r = await store.markWord(w.word_id, status);
         if (!r.ok) toast(r.errors.map((e) => e.message).join('; '));
-      } }, s.label))),
-    el('button', { class: 'link', type: 'button', 'aria-label': `Remove ${w.word}`, onclick: async () => {
-      const r = await store.removeWord(w.word_id);
-      if (r.ok) toast(`${w.word} removed.`); else toast(r.errors.map((e) => e.message).join('; '));
-    } }, '✕'));
+      } finally {
+        pending.delete(w.word_id);
+      }
+    };
+    const known = w.status === Words.KNOWN;
+    return el('li', { class: `word s${w.status}` },
+      el('span', { class: 'word-text' }, w.word, w.note && showNote ? el('span', { class: 'tag' }, w.note) : ''),
+      el('button', { type: 'button', class: `status s${w.status}`, 'aria-label': `${w.word}: ${Words.label(w.status)}. Tap to change.`,
+        onclick: () => mark(/** @type {0|1|2} */ ((w.status + 1) % 3)) }, Words.label(w.status)),
+      el('button', { type: 'button', class: `tick${known ? ' on' : ''}`, 'aria-pressed': String(known),
+        'aria-label': known ? `${w.word}: known. Tap to mark Not yet.` : `Mark ${w.word} as known`, onclick: () => mark(known ? 0 : 2) }, '✓'),
+      editingNow ? el('button', { class: 'link remove', type: 'button', 'aria-label': `Remove ${w.word}`, onclick: async () => {
+        const r = await store.removeWord(w.word_id);
+        if (r.ok) toast(`${w.word} removed.`); else toast(r.errors.map((e) => e.message).join('; '));
+      } }, '✕') : '');
+  };
+
+  /** The Edit / Done link in a list's heading: while editing, its words show a remove button. @param {string} key */
+  const editLink = (key) => el('button', { class: 'link', type: 'button', onclick: () => {
+    if (editing.has(key)) editing.delete(key); else editing.add(key);
+    wordsScreen(main);
+  } }, editing.has(key) ? 'Done' : 'Edit');
 
   const known = (/** @type {Word[]} */ ws) => ws.filter((w) => w.status === Words.KNOWN).length;
   const weeks = lists.weeks.slice(0, WEEKS_SHOWN + 1);
@@ -98,14 +126,14 @@ export function wordsScreen(main) {
       el('h2', {}, 'Add the school’s words'),
       el('div', { class: 'form flat' }, field('Words', text), field('Spelling rule or note', note.node), field('Week starting', week.node), messages, el('div', { class: 'actions' }, add))),
     lists.tricky.length ? el('section', { class: 'card' },
-      el('div', { class: 'title-row' }, el('h2', {}, 'Tricky words'), el('span', { class: 'count' }, String(lists.tricky.length))),
-      el('p', { class: 'hint' }, 'Not yet known, from every week. Mark a word “Know it” and it leaves this list.'),
-      el('ul', { class: 'words' }, lists.tricky.map((w) => row(w, true)))) : '',
+      el('div', { class: 'title-row' }, el('h2', {}, 'Tricky words'), el('span', { class: 'count' }, String(lists.tricky.length)), editLink('tricky')),
+      el('p', { class: 'hint' }, 'Not yet known, from every week. Tap a word’s status to change it, or ✓ for Know it, and it leaves this list.'),
+      el('ul', { class: 'words' }, lists.tricky.map((w) => row(w, true, editing.has('tricky'))))) : '',
     ...(weeks.length === 0 ? [empty(`No words for ${child.name} yet.`)] : weeks.map((g) => el('section', { class: 'card' },
-      el('div', { class: 'title-row' }, el('h2', {}, g.week === thisWeek ? 'This week' : `Week of ${uk(g.week)}`), el('span', { class: 'count' }, `${known(g.words)} of ${g.words.length} known`)),
+      el('div', { class: 'title-row' }, el('h2', {}, g.week === thisWeek ? 'This week' : `Week of ${uk(g.week)}`), el('span', { class: 'count' }, `${known(g.words)} of ${g.words.length} known`), editLink(g.week)),
       Words.byNote(g.words).map((group) => el('div', { class: 'word-group' },
         group.note ? el('h3', { class: 'check-group' }, group.note) : (g.words.some((w) => w.note) ? el('h3', { class: 'check-group' }, 'Other words') : ''),
-        el('ul', { class: 'words' }, group.words.map((w) => row(w)))))))),
+        el('ul', { class: 'words' }, group.words.map((w) => row(w, false, editing.has(g.week))))))))),
     lists.weeks.length > weeks.length ? el('p', { class: 'muted small' }, `${lists.weeks.length - weeks.length} earlier weeks not shown; tricky words from them are listed above.`) : '');
   if (focused) {
     const back = /** @type {HTMLInputElement|null} */ (main.querySelector(`[data-draft="${focused.name}"]`));
