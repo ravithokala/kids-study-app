@@ -18,6 +18,10 @@ const Model = (() => {
   /** A spelling word sent by school for one child, for one week (the Monday). status: see domain/words.js. */
   const WORD_FIELDS = Object.freeze(['word_id', 'child_id', 'word', 'week', 'status', 'practised_on', 'deleted', 'version', 'updated_at', 'updated_by', 'note']);
 
+  /** An 11+ mock test sat by one child. status: see domain/mocks.js. weak and strong list topic ids found at review. */
+  const MOCK_FIELDS = Object.freeze(['mock_id', 'child_id', 'subject_id', 'title', 'taken_on', 'status', 'marks', 'out_of', 'minutes', 'note', 'weak', 'strong',
+    'deleted', 'version', 'updated_at', 'updated_by']);
+
   /** The two tracks. These are fixed; subjects, sections and topics under them are data. */
   const TRACKS = Object.freeze([
     Object.freeze({ id: /** @type {TrackId} */ ('school'), label: 'School' }),
@@ -46,7 +50,7 @@ const Model = (() => {
   /** @returns {Child} */
   const blankChild = () => ({ child_id: '', name: '', year_group: 1, colour: null, sort: 0, deleted: false, version: 0, updated_at: null, updated_by: null });
 
-  return { CHILD_FIELDS, SUBJECT_FIELDS, SECTION_FIELDS, TOPIC_FIELDS, PROGRESS_FIELDS, WORD_FIELDS, TRACKS, COLOURS, MIN_YEAR, MAX_YEAR,
+  return { CHILD_FIELDS, SUBJECT_FIELDS, SECTION_FIELDS, TOPIC_FIELDS, PROGRESS_FIELDS, WORD_FIELDS, MOCK_FIELDS, TRACKS, COLOURS, MIN_YEAR, MAX_YEAR,
     yearLabel, trackLabel, blankChild };
 })();
 

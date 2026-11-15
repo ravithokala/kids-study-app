@@ -7,9 +7,9 @@
  */
 
 const NAME = 'kids-study';
-const VERSION = 2;
+const VERSION = 3;
 /** @type {Array<[string, string]>} store name, key field */
-const STORES = [['children', 'child_id'], ['subjects', 'subject_id'], ['sections', 'section_id'], ['topics', 'topic_id'], ['progress', 'progress_id'], ['words', 'word_id'], ['meta', 'key']];
+const STORES = [['children', 'child_id'], ['subjects', 'subject_id'], ['sections', 'section_id'], ['topics', 'topic_id'], ['progress', 'progress_id'], ['words', 'word_id'], ['mocks', 'mock_id'], ['meta', 'key']];
 const TABLES = STORES.filter(([name]) => name !== 'meta');
 
 /** @type {Promise<IDBDatabase>|null} */

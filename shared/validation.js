@@ -5,6 +5,7 @@ import { Dates } from './dates.js';
 import { Model } from './model.js';
 import { Levels } from './levels.js';
 import { Words } from './words.js';
+import { Mocks } from './mocks.js';
 
 /**
  * Checks and tidies what someone entered. The server always validates; the phone runs the same
@@ -176,7 +177,56 @@ const Validation = (() => {
     return { value: { child_id, week, words: parsed.words, note }, errors: c.errors };
   }
 
-  return { LIMITS, isId, child, subject, section, topic, progress, words };
+  /**
+   * A mock test: which child and 11+ subject, what it is, when, how it went, and the topics found at review.
+   * @param {any} input
+   * @param {{ children: ReadonlyArray<Child>, subjects: ReadonlyArray<Subject>, sections: ReadonlyArray<Section>, topics: ReadonlyArray<Topic>, today: string }} known
+   */
+  function mock(input, known) {
+    const c = collector();
+    const child_id = input.child_id;
+    if (!isId(child_id) || !known.children.some((r) => r.child_id === child_id && !r.deleted)) c.add('child_id', 'INVALID', 'must be an existing child');
+    const subject_id = input.subject_id;
+    if (!isId(subject_id) || !known.subjects.some((s) => s.subject_id === subject_id && !s.deleted && s.track === 'eleven-plus')) c.add('subject_id', 'INVALID', 'must be an 11+ subject');
+    const title = c.text('title', input.title, LIMITS.name, true);
+    let taken_on = known.today;
+    if (input.taken_on !== undefined && input.taken_on !== null && input.taken_on !== '') {
+      if (!Dates.isValid(input.taken_on)) c.add('taken_on', 'INVALID', 'must be a real date');
+      else if (input.taken_on > known.today) c.add('taken_on', 'INVALID', 'cannot be in the future');
+      else taken_on = input.taken_on;
+    }
+    /** @type {0|1|2} */
+    let status = 0;
+    if (input.status !== undefined && input.status !== null) {
+      if (Mocks.isStatus(input.status)) status = input.status;
+      else c.add('status', 'INVALID', 'must be Attempted, Reviewed or Done');
+    }
+    const marks = c.int('marks', input.marks, 0, 1000, false);
+    const out_of = c.int('out_of', input.out_of, 1, 1000, false);
+    const blank = (/** @type {unknown} */ v) => v === undefined || v === null || v === '';
+    if (marks !== null && blank(input.out_of)) c.add('out_of', 'REQUIRED', 'the total marks are needed with the score');
+    if (out_of !== null && blank(input.marks)) c.add('marks', 'REQUIRED', 'the marks are needed with the total');
+    if (marks !== null && out_of !== null && marks > out_of) c.add('marks', 'INVALID', 'cannot be more than the total');
+    const minutes = c.int('minutes', input.minutes, 1, 400, false);
+    const note = c.text('note', input.note, LIMITS.note, false);
+    const inSubject = new Set(known.sections.filter((s) => !s.deleted && s.subject_id === subject_id).map((s) => s.section_id));
+    const ok = new Set(known.topics.filter((t) => !t.deleted && inSubject.has(t.section_id)).map((t) => t.topic_id));
+    /** @param {string} field @param {unknown} value @returns {string[]} */
+    const topicList = (field, value) => {
+      if (value === undefined || value === null) return [];
+      if (!Array.isArray(value)) { c.add(field, 'INVALID', 'must be a list of topics'); return []; }
+      const ids = [...new Set(value)];
+      if (ids.length > 80) c.add(field, 'TOO_MANY', 'at most 80 topics');
+      if (ids.some((id) => typeof id !== 'string' || !ok.has(id))) c.add(field, 'INVALID', 'must be topics of this subject');
+      return /** @type {string[]} */ (ids.filter((id) => typeof id === 'string'));
+    };
+    const weak = topicList('weak', input.weak);
+    const strong = topicList('strong', input.strong);
+    if (weak.some((id) => strong.includes(id))) c.add('strong', 'INVALID', 'a topic cannot be both needing work and going well');
+    return { value: { child_id, subject_id, title, taken_on, status, marks, out_of, minutes, note, weak, strong }, errors: c.errors };
+  }
+
+  return { LIMITS, isId, child, subject, section, topic, progress, words, mock };
 })();
 
 export { Validation };

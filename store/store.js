@@ -7,6 +7,7 @@ import { Validation } from '../shared/validation.js';
 import { Structure } from '../shared/structure.js';
 import { Levels } from '../shared/levels.js';
 import { Words } from '../shared/words.js';
+import { Mocks } from '../shared/mocks.js';
 
 /**
  * The app's data: the sheet is the master copy; this phone keeps a copy in IndexedDB so the app opens at once and can be
@@ -16,19 +17,19 @@ import { Words } from '../shared/words.js';
  * other person's changes). A refresh is always the whole data: it is small.
  */
 
-/** @typedef {'children'|'subjects'|'sections'|'topics'|'progress'|'words'} Table */
+/** @typedef {'children'|'subjects'|'sections'|'topics'|'progress'|'words'|'mocks'} Table */
 /** @type {Record<Table, string>} */
-const ID_FIELD = { children: 'child_id', subjects: 'subject_id', sections: 'section_id', topics: 'topic_id', progress: 'progress_id', words: 'word_id' };
+const ID_FIELD = { children: 'child_id', subjects: 'subject_id', sections: 'section_id', topics: 'topic_id', progress: 'progress_id', words: 'word_id', mocks: 'mock_id' };
 /** @type {ReadonlyArray<Table>} */
-const TABLES = ['children', 'subjects', 'sections', 'topics', 'progress', 'words'];
+const TABLES = ['children', 'subjects', 'sections', 'topics', 'progress', 'words', 'mocks'];
 /** The save and remove actions of each kind of row. */
 const KINDS = Object.freeze({ child: 'children', subject: 'subjects', section: 'sections', topic: 'topics' });
 /** @typedef {keyof typeof KINDS} Kind */
 
 /**
- * @type {{ children: Record<string, Child>, subjects: Record<string, Subject>, sections: Record<string, Section>, topics: Record<string, Topic>, progress: Record<string, Progress>, words: Record<string, Word> }}
+ * @type {{ children: Record<string, Child>, subjects: Record<string, Subject>, sections: Record<string, Section>, topics: Record<string, Topic>, progress: Record<string, Progress>, words: Record<string, Word>, mocks: Record<string, Mock> }}
  */
-export const data = { children: {}, subjects: {}, sections: {}, topics: {}, progress: {}, words: {} };
+export const data = { children: {}, subjects: {}, sections: {}, topics: {}, progress: {}, words: {}, mocks: {} };
 
 export const status = {
   user: '',
@@ -199,6 +200,27 @@ export const removeWord = (id) => send('word.remove', { id, base_version: data.w
 
 /** The current child's words: tricky ones, and by week. @param {string} childId */
 export const wordLists = (childId) => ({ tricky: Words.tricky(live(data.words), childId), weeks: Words.weeks(live(data.words), childId) });
+
+/**
+ * Adds (no id) or changes an 11+ mock test.
+ * @param {string|null} id @param {Record<string, unknown>} fields child_id, subject_id, title, taken_on, status, marks, out_of, minutes, note, weak, strong
+ * @param {string} today
+ */
+export function saveMock(id, fields, today) {
+  const existing = id ? data.mocks[id] : null;
+  const checked = Validation.mock(fields, { ...known(), today });
+  if (checked.errors.length) return Promise.resolve({ ok: /** @type {const} */ (false), errors: checked.errors });
+  return send('mock.save', { id: id ?? undefined, base_version: existing ? existing.version : 0, fields });
+}
+
+/** @param {string} id */
+export const removeMock = (id) => send('mock.remove', { id, base_version: data.mocks[id]?.version ?? 0 });
+
+/** A child's mock tests, newest first. @param {string} childId */
+export const mocksOf = (childId) => Mocks.forChild(live(data.mocks), childId);
+
+/** Topics that lost marks in two or more of a child's mocks. @param {string} childId */
+export const keepsComingUp = (childId) => Mocks.recurring(live(data.mocks), childId);
 
 /** Adds the standard subjects, sections and topics that are missing. */
 export const seedStandard = () => send('seed.apply', {});

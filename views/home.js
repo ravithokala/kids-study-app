@@ -67,8 +67,9 @@ export function home(main) {
         toast(r.ok ? `Added ${r.data.added.subjects} subjects and ${r.data.added.topics} topics.` : r.errors.map((e) => e.message).join('; '));
       } }, 'Add the standard subjects')))] : cards),
     list('Still learning', 'Topics at Learning or Practising. Tap one to record progress.', summary.weak),
+    list('Keeps coming up in mocks', 'Topics that lost marks in two or more of the 11+ mock tests. Tap one to record progress.', store.keepsComingUp(child.child_id).map((x) => x.topic_id).filter((id) => store.data.topics[id] && !store.data.topics[id].deleted)),
     list('Not practised lately', `Started, not yet mastered, and nothing recorded for ${Levels.STALE_DAYS} days or more.`, summary.stale),
-    !noStructure && summary.weak.length === 0 && summary.stale.length === 0 ? empty('Nothing needs attention. Open School or 11+ to record progress.') : '');
+    !noStructure && summary.weak.length === 0 && summary.stale.length === 0 && store.keepsComingUp(child.child_id).length === 0 ? empty('Nothing needs attention. Open School or 11+ to record progress.') : '');
 }
 
 /** @param {string} from @param {string} to */

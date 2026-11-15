@@ -7,6 +7,7 @@ import { Structure } from '../shared/structure.js';
 import { Model } from '../shared/model.js';
 import { childBar, meter, empty, kidClass, yearText } from './parts.js';
 import { subjectForm } from './forms.js';
+import { mocksCard } from './mocks.js';
 
 /**
  * School or 11+: each subject with how far along the child on screen is.
@@ -25,6 +26,7 @@ export function trackScreen(main, track) {
   main.replaceChildren(
     el('h1', { class: `screen-title ${kidClass(child)}` }, el('i', { class: 'dot' }), `${label} · ${child.name}`, el('span', { class: 'muted small' }, ` ${yearText(child)}`)),
     childBar(() => trackScreen(main, track)),
+    track === 'eleven-plus' ? mocksCard(child, () => trackScreen(main, track)) : '',
     nodes.length === 0 ? empty('No subjects here yet. Add one below, or add the standard ones from Home.') : '',
     ...nodes.map((subject) => {
       const ids = Structure.topicIds([subject], child.year_group);
