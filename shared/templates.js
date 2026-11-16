@@ -92,16 +92,17 @@ const Templates = (() => {
   /**
    * Every subject, section and topic in the seed, with stable ids and an order.
    * @param {ReadonlyArray<TrackId>} [tracks]
+   * @param {string|null} [childId]  the child the rows are for: their ids differ from every other child's
    * @returns {SeedPlan}
    */
-  function plan(tracks = ['school', 'eleven-plus']) {
+  function plan(tracks = ['school', 'eleven-plus'], childId = null) {
     /** @type {SeedPlan} */
     const out = { subjects: [], sections: [], topics: [] };
     for (const track of tracks) {
       (SEED[track] || []).forEach((subject, si) => {
-        const subjectPath = `${track}/${subject.subject}`;
+        const subjectPath = `${childId ? `${childId}/` : ''}${track}/${subject.subject}`;
         const subject_id = idFor('sub', subjectPath, subject.subject);
-        out.subjects.push({ subject_id, track, name: subject.subject, sort: si + 1 });
+        out.subjects.push({ subject_id, track, name: subject.subject, sort: si + 1, child_id: childId });
         subject.sections.forEach((section, ci) => {
           const sectionPath = `${subjectPath}/${section.name}`;
           const section_id = idFor('sec', sectionPath, section.name);

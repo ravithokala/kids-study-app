@@ -92,8 +92,19 @@ export const children = () => live(data.children).sort(Structure.bySort);
 export const subjects = () => live(data.subjects);
 /** Every progress row, removed ones left out. */
 export const progressRows = () => live(data.progress);
-/** One track's subjects, sections and topics, in order. @param {TrackId} track */
-export const tree = (track) => Structure.tree(live(data.subjects), live(data.sections), live(data.topics), track);
+/**
+ * One track's subjects, sections and topics, in order: the child on screen's own (every child has their own), or another
+ * child's if given.
+ * @param {TrackId} track @param {string} [childId]
+ */
+export const tree = (track, childId) => Structure.tree(live(data.subjects), live(data.sections), live(data.topics), track, childId ?? currentChild()?.child_id ?? '');
+
+/** A subject with its sections and topics, whichever child it belongs to (an old shared subject too). @param {string} subjectId */
+export function subjectNode(subjectId) {
+  const subject = data.subjects[subjectId];
+  if (!subject || subject.deleted) return null;
+  return Structure.tree(live(data.subjects), live(data.sections), live(data.topics), subject.track).find((s) => s.subject_id === subjectId) ?? null;
+}
 /** 'Maths › Fractions › Percentages'. @param {string} topicId */
 export const pathOf = (topicId) => Structure.path(topicId, every(data.subjects), every(data.sections), every(data.topics));
 
@@ -226,9 +237,9 @@ export const keepsComingUp = (childId) => Mocks.recurring(live(data.mocks), chil
 /**
  * Adds a topic to the Maths list: a name, and optionally a group (created if new). One step: the Maths subject and the group
  * are made when needed.
- * @param {string|null} name @param {string|null} group
+ * @param {string} childId @param {string|null} name @param {string|null} group
  */
-export const addMathsTopic = (name, group) => send('maths.addTopic', { name, group });
+export const addMathsTopic = (childId, name, group) => send('maths.addTopic', { child_id: childId, name, group });
 
 const SCHOOL_KEY = 'ks.school';
 
@@ -246,8 +257,11 @@ export function setSchoolShown(on) {
 /** The tracks that are shown: School only when switched on. */
 export const shownTracks = () => Model.TRACKS.filter((t) => t.id !== 'school' || schoolShown());
 
-/** Adds the standard subjects, sections and topics that are missing. */
-export const seedStandard = () => send('seed.apply', {});
+/**
+ * Adds the standard subjects, sections and topics that are missing, for one child only.
+ * @param {string} childId @param {TrackId[]} [tracks] School and 11+ if left out
+ */
+export const seedStandard = (childId, tracks) => send('seed.apply', { child_id: childId, tracks });
 
 // ---- Refreshing ----
 

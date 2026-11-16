@@ -6,6 +6,8 @@ import { Levels } from '../shared/levels.js';
 import { Structure } from '../shared/structure.js';
 import { Model } from '../shared/model.js';
 import { childBar, meter, empty, kidClass, yearText } from './parts.js';
+import { toast } from './sheet.js';
+import { busy } from './fields.js';
 import { subjectForm } from './forms.js';
 import { mocksCard } from './mocks.js';
 
@@ -27,7 +29,13 @@ export function trackScreen(main, track) {
     el('h1', { class: `screen-title ${kidClass(child)}` }, el('i', { class: 'dot' }), `${label} · ${child.name}`, el('span', { class: 'muted small' }, ` ${yearText(child)}`)),
     childBar(() => trackScreen(main, track)),
     track === 'eleven-plus' ? mocksCard(child, () => trackScreen(main, track)) : '',
-    nodes.length === 0 ? empty('No subjects here yet. Add one below, or add the standard ones from Home.') : '',
+    nodes.length === 0 ? el('div', { class: 'card welcome' },
+      el('h2', {}, `No ${label} subjects yet for ${child.name}`),
+      el('p', {}, `Each child has their own subjects and topics. Start ${child.name}'s with the standard ones, or add your own below.`),
+      el('div', { class: 'actions start' }, el('button', { class: 'button primary', type: 'button', onclick: async (/** @type {Event} */ ev) => {
+        const r = await busy(/** @type {HTMLButtonElement} */ (ev.currentTarget), () => store.seedStandard(child.child_id, [track]));
+        toast(r.ok ? `Added ${r.data.added.subjects} subjects and ${r.data.added.topics} topics for ${child.name}.` : r.errors.map((e) => e.message).join('; '));
+      } }, `Add the standard ${label} subjects`))) : '',
     ...nodes.map((subject) => {
       const ids = Structure.topicIds([subject], child.year_group);
       const s = Levels.summary(ids, rows, child.child_id, today());

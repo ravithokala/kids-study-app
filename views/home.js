@@ -30,7 +30,8 @@ export function home(main) {
   const now = today();
   /** @type {string[]} */
   const allIds = [];
-  const cards = store.shownTracks().map((track) => {
+  // A card for each shown track the child has subjects in.
+  const cards = store.shownTracks().filter((track) => store.tree(track.id).length > 0).map((track) => {
     const ids = Structure.topicIds(store.tree(track.id), child.year_group);
     allIds.push(...ids);
     const s = Levels.summary(ids, rows, child.child_id, now);
@@ -41,6 +42,8 @@ export function home(main) {
       el('div', { class: 'levels-line' }, ids.length ? `${done} of ${ids.length} topics Confident or Mastered · ${s.counts[0]} not started` : 'No topics yet'));
   });
   const summary = Levels.summary(allIds, rows, child.child_id, now);
+  // Topics of this child's own lists, whichever year, for the mock-test list.
+  const mine = new Set(store.shownTracks().flatMap((t) => Structure.topicIds(store.tree(t.id))));
 
   /** @param {string} title @param {string} hint @param {string[]} ids */
   const list = (title, hint, ids) => ids.length === 0 ? '' : el('section', { class: 'group' },
@@ -55,20 +58,23 @@ export function home(main) {
         levelPill(level)));
     }), ids.length > SHOWN ? el('li', { class: 'muted small' }, `and ${ids.length - SHOWN} more`) : ''));
 
-  const noStructure = store.subjects().length === 0;
+  // The standard School and 11+ subjects have not been added for this child yet.
+  const seedTracks = store.shownTracks().filter((t) => t.id !== 'maths');
+  const noStandard = seedTracks.every((t) => store.tree(t.id).length === 0);
   main.replaceChildren(
     el('h1', { class: `screen-title ${kidClass(child)}` }, el('i', { class: 'dot' }), `${child.name} · ${yearText(child)}`),
     childBar(() => home(main)),
-    ...(noStructure ? [el('div', { class: 'card welcome' }, el('h2', {}, 'No subjects yet'),
-      el('p', {}, 'Add the standard School and 11+ subjects, sections and topics to start from. You can change, add and remove any of them afterwards. Maths topics of your own are added on the Maths tab.'),
+    ...(noStandard ? [el('div', { class: 'card welcome' }, el('h2', {}, `No subjects yet for ${child.name}`),
+      el('p', {}, `Each child has their own subjects and topics. Add the standard ${seedTracks.map((t) => t.label).join(' and ')} ones to start from; you can change, add and remove any of them afterwards. Maths topics of your own are added on the Maths tab.`),
       el('div', { class: 'actions start' }, el('button', { class: 'button primary', type: 'button', onclick: async (/** @type {Event} */ ev) => {
-        const r = await busy(/** @type {HTMLButtonElement} */ (ev.currentTarget), () => store.seedStandard());
-        toast(r.ok ? `Added ${r.data.added.subjects} subjects and ${r.data.added.topics} topics.` : r.errors.map((e) => e.message).join('; '));
-      } }, 'Add the standard subjects')))] : cards),
+        const r = await busy(/** @type {HTMLButtonElement} */ (ev.currentTarget), () => store.seedStandard(child.child_id, seedTracks.map((t) => t.id)));
+        toast(r.ok ? `Added ${r.data.added.subjects} subjects and ${r.data.added.topics} topics for ${child.name}.` : r.errors.map((e) => e.message).join('; '));
+      } }, `Add the standard subjects for ${child.name}`)))] : []),
+    ...cards,
     list('Still learning', 'Topics at Learning or Practising. Tap one to record progress.', summary.weak),
-    list('Keeps coming up in mocks', 'Topics that lost marks in two or more of the 11+ mock tests. Tap one to record progress.', store.keepsComingUp(child.child_id).map((x) => x.topic_id).filter((id) => store.data.topics[id] && !store.data.topics[id].deleted)),
+    list('Keeps coming up in mocks', 'Topics that lost marks in two or more of the 11+ mock tests. Tap one to record progress.', store.keepsComingUp(child.child_id).map((x) => x.topic_id).filter((id) => mine.has(id))),
     list('Not practised lately', `Started, not yet mastered, and nothing recorded for ${Levels.STALE_DAYS} days or more.`, summary.stale),
-    !noStructure && summary.weak.length === 0 && summary.stale.length === 0 && store.keepsComingUp(child.child_id).length === 0 ? empty('Nothing needs attention. Open School or 11+ to record progress.') : '');
+    cards.length > 0 && summary.weak.length === 0 && summary.stale.length === 0 && store.keepsComingUp(child.child_id).filter((x) => mine.has(x.topic_id)).length === 0 ? empty('Nothing needs attention. Open School or 11+ to record progress.') : '');
 }
 
 /** @param {string} from @param {string} to */

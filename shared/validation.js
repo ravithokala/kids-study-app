@@ -89,16 +89,18 @@ const Validation = (() => {
   }
 
   /**
-   * @param {any} input @param {{ subjects: ReadonlyArray<Subject>, self?: string|null }} known
+   * @param {any} input @param {{ subjects: ReadonlyArray<Subject>, children: ReadonlyArray<Child>, self?: string|null }} known
    */
   function subject(input, known) {
     const c = collector();
     const name = c.text('name', input.name, LIMITS.name, true);
     const track = Model.TRACKS.some((t) => t.id === input.track) ? input.track : null;
     if (!track) c.add('track', 'INVALID', 'must be School, 11+ or Maths');
-    const sameTrack = known.subjects.filter((s) => s.track === track);
-    if (taken(sameTrack, name, known.self, (r) => r.subject_id)) c.add('name', 'DUPLICATE', 'is already a subject in this track');
-    return { value: { track, name }, errors: c.errors };
+    const child_id = input.child_id;
+    if (!isId(child_id) || !known.children.some((r) => r.child_id === child_id && !r.deleted)) c.add('child_id', 'INVALID', 'must be an existing child');
+    const sameTrack = known.subjects.filter((s) => s.track === track && s.child_id === child_id);
+    if (taken(sameTrack, name, known.self, (r) => r.subject_id)) c.add('name', 'DUPLICATE', 'is already a subject of this child in this track');
+    return { value: { track, name, child_id }, errors: c.errors };
   }
 
   /**
@@ -187,7 +189,7 @@ const Validation = (() => {
     const child_id = input.child_id;
     if (!isId(child_id) || !known.children.some((r) => r.child_id === child_id && !r.deleted)) c.add('child_id', 'INVALID', 'must be an existing child');
     const subject_id = input.subject_id;
-    if (!isId(subject_id) || !known.subjects.some((s) => s.subject_id === subject_id && !s.deleted && s.track === 'eleven-plus')) c.add('subject_id', 'INVALID', 'must be an 11+ subject');
+    if (!isId(subject_id) || !known.subjects.some((s) => s.subject_id === subject_id && !s.deleted && s.track === 'eleven-plus' && (!s.child_id || s.child_id === child_id))) c.add('subject_id', 'INVALID', 'must be one of this child\'s 11+ subjects');
     const title = c.text('title', input.title, LIMITS.name, true);
     let taken_on = known.today;
     if (input.taken_on !== undefined && input.taken_on !== null && input.taken_on !== '') {

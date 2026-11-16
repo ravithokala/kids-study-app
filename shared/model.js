@@ -11,7 +11,8 @@
  */
 const Model = (() => {
   const CHILD_FIELDS = Object.freeze(['child_id', 'name', 'year_group', 'colour', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
-  const SUBJECT_FIELDS = Object.freeze(['subject_id', 'track', 'name', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
+  /** child_id (last, added later): the child a subject belongs to. A subject with none is an old shared one, which is not shown. */
+  const SUBJECT_FIELDS = Object.freeze(['subject_id', 'track', 'name', 'sort', 'deleted', 'version', 'updated_at', 'updated_by', 'child_id']);
   const SECTION_FIELDS = Object.freeze(['section_id', 'subject_id', 'name', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
   const TOPIC_FIELDS = Object.freeze(['topic_id', 'section_id', 'name', 'year_group', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
   const PROGRESS_FIELDS = Object.freeze(['progress_id', 'child_id', 'topic_id', 'level', 'score', 'on', 'note', 'deleted', 'version', 'updated_at', 'updated_by']);

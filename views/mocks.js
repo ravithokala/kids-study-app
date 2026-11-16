@@ -41,8 +41,10 @@ export function mocksCard(child, redraw) {
  */
 export function mockSheet(child, id, redraw) {
   const mock = id ? store.data.mocks[id] : null;
-  const subjects = store.tree('eleven-plus');
-  if (subjects.length === 0) { toast('Add the 11+ subjects first (Home → Add the standard subjects).'); return; }
+  // A new mock uses this child's own 11+ subjects; a saved one keeps its subject (an old shared one too).
+  const own = mock ? [store.subjectNode(mock.subject_id)].filter((s) => s !== null) : store.tree('eleven-plus', child.child_id);
+  const subjects = /** @type {SubjectNode[]} */ (own);
+  if (subjects.length === 0) { toast(`Add ${child.name}'s 11+ subjects first (the standard ones, below).`); return; }
   let subjectId = mock ? mock.subject_id : subjects[0].subject_id;
   let status = mock ? mock.status : 0;
   const weak = new Set(mock ? mock.weak : []);

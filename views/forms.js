@@ -76,9 +76,11 @@ export function childForm(id = null) {
 /** @param {TrackId} track @param {string|null} [id] */
 export function subjectForm(track, id = null) {
   const s = id ? store.data.subjects[id] : null;
+  const child = s?.child_id ? store.data.children[s.child_id] : store.currentChild();
+  if (!child) return;
   openForm({
-    title: s ? 'Change subject' : `Add a ${Model.trackLabel(track)} subject`, nameLabel: 'Subject', name: s?.name ?? null,
-    save: (v) => store.save('subject', id, { track, name: v.name }),
+    title: s ? 'Change subject' : `Add a ${Model.trackLabel(track)} subject for ${child.name}`, nameLabel: 'Subject', name: s?.name ?? null,
+    save: (v) => store.save('subject', id, { track, name: v.name, child_id: child.child_id }),
     remove: s ? () => store.remove('subject', s.subject_id) : undefined,
     removeAsk: s ? `Remove ${s.name} and everything under it from view? Nothing is deleted from the sheet.` : undefined,
     saved: s ? 'Saved.' : 'Subject added.',

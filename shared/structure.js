@@ -13,12 +13,13 @@ const Structure = (() => {
   const bySort = (a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name, 'en-GB');
 
   /**
-   * One track's subjects, each with its sections, each with its topics, in order.
+   * One track's subjects, each with its sections, each with its topics, in order. With a child, only that child's own subjects
+   * (every child has their own; an old shared subject, with no child, belongs to nobody).
    * @param {ReadonlyArray<Subject>} subjects @param {ReadonlyArray<Section>} sections @param {ReadonlyArray<Topic>} topics
-   * @param {TrackId} track @returns {SubjectNode[]}
+   * @param {TrackId} track @param {string|null} [childId] @returns {SubjectNode[]}
    */
-  function tree(subjects, sections, topics, track) {
-    return subjects.filter((s) => !s.deleted && s.track === track).sort(bySort).map((s) => ({
+  function tree(subjects, sections, topics, track, childId) {
+    return subjects.filter((s) => !s.deleted && s.track === track && (childId === undefined || s.child_id === childId)).sort(bySort).map((s) => ({
       ...s,
       sections: sections.filter((c) => !c.deleted && c.subject_id === s.subject_id).sort(bySort).map((c) => ({
         ...c,

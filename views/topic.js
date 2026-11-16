@@ -11,11 +11,11 @@ import { topicForm } from './forms.js';
 /**
  * One topic for the child on screen: set a new level (with an optional score, day and note), and see the history.
  * A mistaken entry is removed, not edited, so the history stays honest.
- * @param {string} topicId
+ * @param {string} topicId @param {Child|null} [forChild]  the child it is for (the child on screen if left out)
  */
-export function topicSheet(topicId) {
+export function topicSheet(topicId, forChild = null) {
   const topic = store.data.topics[topicId];
-  const child = store.currentChild();
+  const child = forChild ?? store.currentChild();
   if (!topic || !child) return;
   const rows = Levels.history(store.progressRows(), child.child_id, topicId);
   let level = rows.length ? rows[0].level : 0;

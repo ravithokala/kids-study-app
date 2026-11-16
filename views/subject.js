@@ -5,7 +5,7 @@ import * as store from '../store/store.js';
 import { Levels } from '../shared/levels.js';
 import { Structure } from '../shared/structure.js';
 import { Model } from '../shared/model.js';
-import { childBar, levelPill, empty, kidClass } from './parts.js';
+import { levelPill, empty, kidClass } from './parts.js';
 import { sectionForm, subjectForm, topicForm } from './forms.js';
 import { topicSheet } from './topic.js';
 
@@ -20,12 +20,13 @@ let showAll = false;
  */
 export function subjectScreen(main, subjectId) {
   const subject = store.data.subjects[subjectId];
-  const child = store.currentChild();
+  // A subject belongs to one child: their levels are shown, whichever child is on screen elsewhere.
+  const child = subject?.child_id ? store.data.children[subject.child_id] ?? null : store.currentChild();
   if (!subject || subject.deleted) {
     main.replaceChildren(el('a', { class: 'back', href: '#/home' }, '‹ Home'), empty('This subject is not here any more.'));
     return;
   }
-  const node = store.tree(subject.track).find((s) => s.subject_id === subjectId);
+  const node = store.subjectNode(subjectId);
   const rows = store.progressRows();
   let hidden = 0;
   const sections = (node?.sections ?? []).map((section) => {
@@ -37,7 +38,7 @@ export function subjectScreen(main, subjectId) {
       topics.length === 0 ? el('p', { class: 'muted small' }, 'No topics to show.') : el('ul', { class: 'rows' }, topics.map((t) => {
         const last = child ? Levels.latest(rows, child.child_id, t.topic_id) : null;
         const level = last ? last.level : 0;
-        return el('li', {}, el('button', { class: `row l${level}`, type: 'button', disabled: !child, onclick: () => topicSheet(t.topic_id) },
+        return el('li', {}, el('button', { class: `row l${level}`, type: 'button', disabled: !child, onclick: () => topicSheet(t.topic_id, child) },
           el('div', { class: 'row-main' }, el('div', { class: 'row-title' }, t.name),
             el('div', { class: 'row-sub' }, [t.year_group !== null ? Model.yearLabel(t.year_group) : '', last ? `last ${uk(last.on)}` : ''].filter(Boolean).join(' · '))),
           levelPill(level)));
@@ -45,10 +46,10 @@ export function subjectScreen(main, subjectId) {
       el('div', { class: 'add-row' }, el('button', { class: 'link', type: 'button', onclick: () => topicForm(section.section_id) }, '+ Add a topic')));
   });
   main.replaceChildren(
-    el('a', { class: 'back', href: `#/${subject.track}` }, `‹ ${Model.trackLabel(subject.track)}`),
+    el('a', { class: 'back', href: `#/${subject.track}`, onclick: () => { if (child) store.selectChild(child.child_id); } }, `‹ ${Model.trackLabel(subject.track)}`),
     el('div', { class: 'title-row' }, el('h1', { class: `screen-title ${kidClass(child)}` }, subject.name),
       el('button', { class: 'link', type: 'button', onclick: () => subjectForm(subject.track, subjectId) }, 'Edit')),
-    childBar(() => subjectScreen(main, subjectId)),
+    child ? el('p', { class: 'muted small' }, `For ${child.name}.`) : el('p', { class: 'muted small' }, 'An old subject shared by every child; it is no longer shown on the other screens.'),
     ...(sections.length === 0 ? [empty('No sections yet. Add one below.')] : sections),
     hidden || showAll ? el('p', { class: 'muted small' }, showAll ? 'Showing topics from every school year. ' : `${hidden} topic${hidden === 1 ? '' : 's'} from later school years hidden. `,
       el('button', { class: 'link', type: 'button', onclick: () => { showAll = !showAll; subjectScreen(main, subjectId); } }, showAll ? 'Show only this child’s years' : 'Show all')) : '',
