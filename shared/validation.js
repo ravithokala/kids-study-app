@@ -95,7 +95,7 @@ const Validation = (() => {
     const c = collector();
     const name = c.text('name', input.name, LIMITS.name, true);
     const track = Model.TRACKS.some((t) => t.id === input.track) ? input.track : null;
-    if (!track) c.add('track', 'INVALID', 'must be School or 11+');
+    if (!track) c.add('track', 'INVALID', 'must be School, 11+ or Maths');
     const sameTrack = known.subjects.filter((s) => s.track === track);
     if (taken(sameTrack, name, known.self, (r) => r.subject_id)) c.add('name', 'DUPLICATE', 'is already a subject in this track');
     return { value: { track, name }, errors: c.errors };

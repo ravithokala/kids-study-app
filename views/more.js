@@ -2,7 +2,7 @@
 
 import { el, uk } from '../dom.js';
 import { VERSION } from '../version.js';
-import { status } from '../store/store.js';
+import { status, schoolShown, setSchoolShown } from '../store/store.js';
 import { call } from '../api.js';
 import { toast } from './sheet.js';
 import { busy } from './fields.js';
@@ -26,6 +26,12 @@ export function more(main, actions) {
     el('section', { class: 'card' },
       el('h2', {}, 'Children'),
       el('a', { class: 'menu-link', href: '#/children' }, 'Add, change or move up a year', el('span', { class: 'chevron' }, '›'))),
+    el('section', { class: 'card' },
+      el('h2', {}, 'Screens'),
+      el('div', { class: 'segmented', role: 'group', 'aria-label': 'School tab' },
+        el('button', { type: 'button', 'aria-pressed': String(!schoolShown()), onclick: () => { setSchoolShown(false); } }, 'Hide School'),
+        el('button', { type: 'button', 'aria-pressed': String(schoolShown()), onclick: () => { setSchoolShown(true); } }, 'Show School')),
+      el('p', { class: 'muted small' }, 'The School tab holds the school subjects, sections and topics. It is hidden until you switch it on, on this phone only.')),
     el('section', { class: 'card' },
       el('h2', {}, 'Data'),
       el('p', {}, status.online ? 'Changes are saved straight to the sheet; this phone keeps a copy for quick opening.' : 'Offline: you can view everything; saving needs a connection.'),

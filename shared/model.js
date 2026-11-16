@@ -22,10 +22,11 @@ const Model = (() => {
   const MOCK_FIELDS = Object.freeze(['mock_id', 'child_id', 'subject_id', 'title', 'taken_on', 'status', 'marks', 'out_of', 'minutes', 'note', 'weak', 'strong',
     'deleted', 'version', 'updated_at', 'updated_by']);
 
-  /** The two tracks. These are fixed; subjects, sections and topics under them are data. */
+  /** The three tracks. These are fixed; subjects, sections and topics under them are data. */
   const TRACKS = Object.freeze([
     Object.freeze({ id: /** @type {TrackId} */ ('school'), label: 'School' }),
     Object.freeze({ id: /** @type {TrackId} */ ('eleven-plus'), label: '11+' }),
+    Object.freeze({ id: /** @type {TrackId} */ ('maths'), label: 'Maths' }),
   ]);
 
   /** Colours a child can be shown in (names of CSS tokens on the phone). */

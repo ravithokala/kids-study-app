@@ -15,19 +15,23 @@ import { home } from './views/home.js';
 import { trackScreen } from './views/track.js';
 import { subjectScreen } from './views/subject.js';
 import { childrenScreen } from './views/children.js';
+import { mathsScreen } from './views/maths.js';
 import { wordsScreen } from './views/words.js';
 import { more } from './views/more.js';
 
 /**
  * Kids Study. Starts the app, signs in, loads this phone's copy, keeps it in step with the sheet, and sends each address
  * to its screen:
- *   #/home  the child on screen         #/school  #/eleven-plus  a track's subjects
+ *   #/home  the child on screen         #/eleven-plus  (#/school, if switched on)  a track's subjects   #/maths  the parents' own Maths topics
  *   #/subject/<id>  one subject   #/words  the school's weekly spelling words
  *          #/children  add and change children     #/more  settings, backup
  */
 
-const TABS = [['home', 'Home'], ['school', 'School'], ['eleven-plus', '11+'], ['words', 'Words'], ['more', 'More']];
-const SCREENS = ['home', 'school', 'eleven-plus', 'subject', 'words', 'children', 'more'];
+const ALL_TABS = [['home', 'Home'], ['school', 'School'], ['eleven-plus', '11+'], ['maths', 'Maths'], ['words', 'Words'], ['more', 'More']];
+const SCREENS = ['home', 'school', 'eleven-plus', 'maths', 'subject', 'words', 'children', 'more'];
+
+/** The tabs on show: School only when switched on in More. */
+const tabsNow = () => ALL_TABS.filter(([id]) => id !== 'school' || store.schoolShown());
 
 /** The screen and its argument from the address. */
 function route() {
@@ -43,6 +47,15 @@ function tabOf(screen, arg) {
 
 let signedIn = false;
 
+/** Draws the tab bar again if the tabs on show have changed (School switched on or off). */
+function drawTabs() {
+  const tabs = tabsNow();
+  const bar = $('tabs');
+  if (bar.children.length === tabs.length && tabs.every(([id], i) => bar.children[i]?.getAttribute('data-tab') === id)) return;
+  bar.replaceChildren(...tabs.map(([id, label]) => el('a', { href: `#/${id}`, 'data-tab': id }, label)));
+  bar.style.gridTemplateColumns = `repeat(${tabs.length}, 1fr)`;
+}
+
 /** Draws the current screen. */
 function show() {
   if (!signedIn) return;
@@ -50,10 +63,12 @@ function show() {
   const main = $('main');
   if (screen === 'home') home(main);
   else if (screen === 'school' || screen === 'eleven-plus') trackScreen(main, screen);
+  else if (screen === 'maths') mathsScreen(main);
   else if (screen === 'subject') subjectScreen(main, arg);
   else if (screen === 'words') wordsScreen(main);
   else if (screen === 'children') childrenScreen(main);
   else more(main, { signOut, signOutEverywhere });
+  drawTabs();
   document.querySelectorAll('#tabs a').forEach((a) => a.setAttribute('aria-current', String(a.getAttribute('data-tab') === tabOf(screen, arg))));
   showSyncState();
 }
@@ -128,7 +143,7 @@ async function start() {
     return;
   }
 
-  $('tabs').replaceChildren(...TABS.map(([id, label]) => el('a', { href: `#/${id}`, 'data-tab': id }, label)));
+  drawTabs();
   $('sync').addEventListener('click', () => { window.location.hash = '#/more'; });
   // Tapping the time and ↻ re-reads the sheet now (reads only), and checks for a newer version of the app.
   $('refresh').addEventListener('click', () => {

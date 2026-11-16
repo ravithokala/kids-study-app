@@ -40,6 +40,8 @@ const Templates = (() => {
         { name: 'Physics', topics: ['Forces', 'Light', 'Electricity', 'Earth and space'] },
       ] },
     ],
+    // The Maths track has no starting content: its topics are the parents' own (services/mathsService.js).
+    maths: [],
     'eleven-plus': [
       { subject: 'English', sections: [
         { name: 'Comprehension', topics: ['Fiction extracts', 'Non-fiction extracts', 'Poetry'] },

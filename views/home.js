@@ -4,7 +4,6 @@ import { el, today } from '../dom.js';
 import * as store from '../store/store.js';
 import { Levels } from '../shared/levels.js';
 import { Structure } from '../shared/structure.js';
-import { Model } from '../shared/model.js';
 import { toast } from './sheet.js';
 import { busy } from './fields.js';
 import { childBar, meter, levelPill, empty, kidClass, yearText } from './parts.js';
@@ -31,7 +30,7 @@ export function home(main) {
   const now = today();
   /** @type {string[]} */
   const allIds = [];
-  const cards = Model.TRACKS.map((track) => {
+  const cards = store.shownTracks().map((track) => {
     const ids = Structure.topicIds(store.tree(track.id), child.year_group);
     allIds.push(...ids);
     const s = Levels.summary(ids, rows, child.child_id, now);
@@ -61,7 +60,7 @@ export function home(main) {
     el('h1', { class: `screen-title ${kidClass(child)}` }, el('i', { class: 'dot' }), `${child.name} · ${yearText(child)}`),
     childBar(() => home(main)),
     ...(noStructure ? [el('div', { class: 'card welcome' }, el('h2', {}, 'No subjects yet'),
-      el('p', {}, 'Add the standard School and 11+ subjects, sections and topics to start from. You can change, add and remove any of them afterwards.'),
+      el('p', {}, 'Add the standard School and 11+ subjects, sections and topics to start from. You can change, add and remove any of them afterwards. Maths topics of your own are added on the Maths tab.'),
       el('div', { class: 'actions start' }, el('button', { class: 'button primary', type: 'button', onclick: async (/** @type {Event} */ ev) => {
         const r = await busy(/** @type {HTMLButtonElement} */ (ev.currentTarget), () => store.seedStandard());
         toast(r.ok ? `Added ${r.data.added.subjects} subjects and ${r.data.added.topics} topics.` : r.errors.map((e) => e.message).join('; '));

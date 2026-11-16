@@ -8,6 +8,7 @@ import { Structure } from '../shared/structure.js';
 import { Levels } from '../shared/levels.js';
 import { Words } from '../shared/words.js';
 import { Mocks } from '../shared/mocks.js';
+import { Model } from '../shared/model.js';
 
 /**
  * The app's data: the sheet is the master copy; this phone keeps a copy in IndexedDB so the app opens at once and can be
@@ -221,6 +222,29 @@ export const mocksOf = (childId) => Mocks.forChild(live(data.mocks), childId);
 
 /** Topics that lost marks in two or more of a child's mocks. @param {string} childId */
 export const keepsComingUp = (childId) => Mocks.recurring(live(data.mocks), childId);
+
+/**
+ * Adds a topic to the Maths list: a name, and optionally a group (created if new). One step: the Maths subject and the group
+ * are made when needed.
+ * @param {string|null} name @param {string|null} group
+ */
+export const addMathsTopic = (name, group) => send('maths.addTopic', { name, group });
+
+const SCHOOL_KEY = 'ks.school';
+
+/** Whether the School tab is shown. It is off until switched on in More (this phone only). */
+export function schoolShown() {
+  try { return localStorage.getItem(SCHOOL_KEY) === 'on'; } catch (e) { return false; }
+}
+
+/** @param {boolean} on */
+export function setSchoolShown(on) {
+  try { localStorage.setItem(SCHOOL_KEY, on ? 'on' : 'off'); } catch (e) { /* not remembered */ }
+  changed();
+}
+
+/** The tracks that are shown: School only when switched on. */
+export const shownTracks = () => Model.TRACKS.filter((t) => t.id !== 'school' || schoolShown());
 
 /** Adds the standard subjects, sections and topics that are missing. */
 export const seedStandard = () => send('seed.apply', {});

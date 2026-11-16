@@ -8,8 +8,8 @@
  * - SHELL: every file of the app (a test will check it once the screens exist, phase 3).
  * - LEGACY: the names this app's saved copies had before; none yet.
  */
-const VERSION = 'shell-3108065-0f62cb1ff3d6';
-const SHELL = ['./', 'api.js', 'app.js', 'auth.js', 'checks.js', 'config.js', 'dom.js', 'freshness.js', 'guard.js', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon.svg', 'index.html', 'install.js', 'manifest.webmanifest', 'problems.js', 'request.js', 'shared/dates.js', 'shared/levels.js', 'shared/mocks.js', 'shared/model.js', 'shared/structure.js', 'shared/templates.js', 'shared/validation.js', 'shared/words.js', 'store/db.js', 'store/store.js', 'styles.css', 'theme-boot.js', 'theme.js', 'update.js', 'version.js', 'views/children.js', 'views/fields.js', 'views/forms.js', 'views/home.js', 'views/install.js', 'views/mocks.js', 'views/more.js', 'views/parts.js', 'views/sheet.js', 'views/subject.js', 'views/system.js', 'views/topic.js', 'views/track.js', 'views/words.js'];
+const VERSION = 'shell-cfa3440-efe16f09c828';
+const SHELL = ['./', 'api.js', 'app.js', 'auth.js', 'checks.js', 'config.js', 'dom.js', 'freshness.js', 'guard.js', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/icon.svg', 'index.html', 'install.js', 'manifest.webmanifest', 'problems.js', 'request.js', 'shared/dates.js', 'shared/levels.js', 'shared/mocks.js', 'shared/model.js', 'shared/structure.js', 'shared/templates.js', 'shared/validation.js', 'shared/words.js', 'store/db.js', 'store/store.js', 'styles.css', 'theme-boot.js', 'theme.js', 'update.js', 'version.js', 'views/children.js', 'views/fields.js', 'views/forms.js', 'views/home.js', 'views/install.js', 'views/maths.js', 'views/mocks.js', 'views/more.js', 'views/parts.js', 'views/sheet.js', 'views/subject.js', 'views/system.js', 'views/topic.js', 'views/track.js', 'views/words.js'];
 const LEGACY = /^shell-v\d+$/;
 
 // ---- Below this line: app-kit/pwa/sw-core.js. GENERATED: change it in ../app-kit, then run "node ../app-kit/sync.js" in this app. ----
