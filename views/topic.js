@@ -28,6 +28,11 @@ export function topicSheet(topicId, forChild = null) {
   const on = input('date', today(), { max: today() });
   const note = input('text', null, { maxlength: 300, placeholder: 'Optional: what went well or badly' });
   const save = /** @type {HTMLButtonElement} */ (el('button', { class: 'primary', type: 'button' }, 'Save level'));
+  // What to remember about the topic itself, e.g. a worked example (not about one attempt: that is the level's own note).
+  const topicNote = /** @type {HTMLTextAreaElement} */ (el('textarea', { rows: 3, maxlength: 500, placeholder: 'e.g. 28 + 7: 28 + 2 = 30, then + 5 = 35', 'aria-label': 'Notes about this topic' }));
+  topicNote.value = topic.note ?? '';
+  const noteChanged = () => topicNote.value.trim() !== (topic.note ?? '');
+  const saveNote = /** @type {HTMLButtonElement} */ (el('button', { class: 'button', type: 'button' }, 'Save note'));
 
   const history = rows.length === 0 ? el('p', { class: 'muted small' }, `Nothing recorded yet for ${child.name}.`)
     : el('ul', { class: 'history' }, rows.map((r) => el('li', {},
@@ -41,6 +46,8 @@ export function topicSheet(topicId, forChild = null) {
 
   const sheet = openSheet(topic.name, el('div', { class: 'form' },
     el('p', { class: 'muted small' }, `${store.pathOf(topicId)}${topic.year_group !== null ? ` · taught in ${yearText({ ...child, year_group: topic.year_group })}` : ''} · for ${child.name}`),
+    field('Notes about this topic', topicNote),
+    el('div', { class: 'actions start' }, saveNote),
     field('Level now', choices),
     el('div', { class: 'row2' }, field('Day', on.node), field('Score', score.node)),
     field('Note', note.node),
@@ -49,7 +56,16 @@ export function topicSheet(topicId, forChild = null) {
     history,
     el('button', { class: 'link', type: 'button', onclick: () => { sheet.close(); topicForm(topic.section_id, topic.topic_id); } }, 'Rename or remove this topic')));
 
+  saveNote.addEventListener('click', async () => {
+    const r = await busy(saveNote, () => store.saveTopicNote(topicId, topicNote.value.trim() || null));
+    if (r.ok) toast('Note saved.'); else showIssues(sheet.messages, { errors: r.errors, warnings: [] });
+  });
   save.addEventListener('click', async () => {
+    // A note typed but not saved goes with the level, so it is not lost.
+    if (noteChanged()) {
+      const n = await busy(save, () => store.saveTopicNote(topicId, topicNote.value.trim() || null));
+      if (!n.ok) { showIssues(sheet.messages, { errors: n.errors, warnings: [] }); return; }
+    }
     const r = await busy(save, () => store.addProgress({ child_id: child.child_id, topic_id: topicId, level, score: score.get(), on: on.get() ?? undefined, note: note.get() }, today()));
     if (r.ok) { sheet.close(); toast(`${topic.name}: ${Levels.label(level)}.`); } else showIssues(sheet.messages, { errors: r.errors, warnings: [] });
   });

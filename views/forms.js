@@ -105,7 +105,7 @@ export function topicForm(sectionId, id = null) {
   openForm({
     title: t ? 'Change topic' : 'Add a topic', nameLabel: 'Topic (e.g. Percentages)', name: t?.name ?? null,
     year: { value: t ? t.year_group : null, any: true },
-    save: (v) => store.save('topic', id, { section_id: sectionId, name: v.name, year_group: v.year }),
+    save: (v) => store.save('topic', id, { section_id: sectionId, name: v.name, year_group: v.year, note: t?.note ?? null }),
     remove: t ? () => store.remove('topic', t.topic_id) : undefined,
     removeAsk: t ? `Remove ${t.name}? Its levels stay in the sheet but are no longer shown.` : undefined,
     saved: t ? 'Saved.' : 'Topic added.',

@@ -40,7 +40,8 @@ export function subjectScreen(main, subjectId) {
         const level = last ? last.level : 0;
         return el('li', {}, el('button', { class: `row l${level}`, type: 'button', disabled: !child, onclick: () => topicSheet(t.topic_id, child) },
           el('div', { class: 'row-main' }, el('div', { class: 'row-title' }, t.name),
-            el('div', { class: 'row-sub' }, [t.year_group !== null ? Model.yearLabel(t.year_group) : '', last ? `last ${uk(last.on)}` : ''].filter(Boolean).join(' · '))),
+            el('div', { class: 'row-sub' }, [t.year_group !== null ? Model.yearLabel(t.year_group) : '', last ? `last ${uk(last.on)}` : ''].filter(Boolean).join(' · ')),
+            t.note ? el('div', { class: 'row-note' }, t.note) : ''),
           levelPill(level)));
       })),
       el('div', { class: 'add-row' }, el('button', { class: 'link', type: 'button', onclick: () => topicForm(section.section_id) }, '+ Add a topic')));

@@ -47,7 +47,7 @@ export function mathsScreen(main) {
         const last = Levels.latest(rows, child.child_id, t.topic_id);
         const level = last ? last.level : 0;
         return el('li', {}, el('button', { class: `row l${level}`, type: 'button', onclick: () => topicSheet(t.topic_id) },
-          el('div', { class: 'row-main' }, el('div', { class: 'row-title' }, t.name), last ? el('div', { class: 'row-sub' }, `last ${uk(last.on)}`) : ''),
+          el('div', { class: 'row-main' }, el('div', { class: 'row-title' }, t.name), last ? el('div', { class: 'row-sub' }, `last ${uk(last.on)}`) : '', t.note ? el('div', { class: 'row-note' }, t.note) : ''),
           levelPill(level)));
       }))))),
     el('div', { class: 'add-row' }, el('button', { class: 'button primary', type: 'button', onclick: () => addTopicSheet(child, groups.map((g) => g.name).filter((n) => n !== NO_GROUP)) }, '+ Add a topic')));
@@ -61,21 +61,23 @@ export function mathsScreen(main) {
 function addTopicSheet(child, groupNames) {
   const name = input('text', null, { maxlength: 80, autocomplete: 'off', placeholder: 'e.g. Percentages' });
   const group = input('text', null, { maxlength: 80, autocomplete: 'off', placeholder: 'e.g. Addition (leave blank for Other)', list: 'maths-groups' });
+  const note = /** @type {HTMLTextAreaElement} */ (el('textarea', { rows: 2, maxlength: 500, placeholder: 'e.g. 28 + 7: 28 + 2 = 30, then + 5 = 35' }));
   const list = el('datalist', { id: 'maths-groups' }, groupNames.map((n) => el('option', { value: n })));
   const save = /** @type {HTMLButtonElement} */ (el('button', { class: 'primary', type: 'button' }, 'Save'));
   const another = /** @type {HTMLButtonElement} */ (el('button', { type: 'button' }, 'Save and add another'));
   const sheet = openSheet(`Add a Maths topic for ${child.name}`, el('div', { class: 'form' },
-    field('Topic', name.node), field('Group (optional)', group.node), list,
+    field('Topic', name.node), field('Group (optional)', group.node), list, field('Note, e.g. an example (optional)', note),
     el('p', { class: 'muted small' }, 'A group collects related topics, for example Addition or Fractions. Topics with no group are listed under Other.'),
     el('div', { class: 'actions' }, another, save)));
   /** @param {HTMLButtonElement} button @param {boolean} more */
   const go = (button, more) => async () => {
-    const r = await busy(button, () => store.addMathsTopic(child.child_id, name.get(), group.get()));
+    const r = await busy(button, () => store.addMathsTopic(child.child_id, name.get(), group.get(), note.value.trim() || null));
     if (!r.ok) { showIssues(sheet.messages, { errors: r.errors, warnings: [] }); return; }
     if (more) {
       toast(`${r.rows.topics[0]?.name ?? 'Topic'} added.`);
       sheet.messages.replaceChildren();
       name.node.value = '';
+      note.value = '';
       name.node.focus();
       return;
     }

@@ -16,7 +16,7 @@ import { Mocks } from './mocks.js';
  */
 const Validation = (() => {
   const ID = /^[A-Za-z0-9-]{8,80}$/;
-  const LIMITS = Object.freeze({ child: 40, name: 80, note: 300, rule: 100 });
+  const LIMITS = Object.freeze({ child: 40, name: 80, note: 300, rule: 100, topicNote: 500 });
 
   /** @param {unknown} value */
   const isId = (value) => typeof value === 'string' && ID.test(value);
@@ -117,7 +117,7 @@ const Validation = (() => {
   }
 
   /**
-   * @param {any} input @param {{ sections: ReadonlyArray<Section>, topics: ReadonlyArray<Topic>, self?: string|null }} known
+   * @param {any} input  { section_id, name, year_group?, note? }  @param {{ sections: ReadonlyArray<Section>, topics: ReadonlyArray<Topic>, self?: string|null }} known
    */
   function topic(input, known) {
     const c = collector();
@@ -127,7 +127,8 @@ const Validation = (() => {
     if (!isId(section_id) || !known.sections.some((s) => s.section_id === section_id && !s.deleted)) c.add('section_id', 'INVALID', 'must be an existing section');
     const siblings = known.topics.filter((t) => t.section_id === section_id);
     if (taken(siblings, name, known.self, (r) => r.topic_id)) c.add('name', 'DUPLICATE', 'is already a topic in this section');
-    return { value: { section_id, name, year_group }, errors: c.errors };
+    const note = c.text('note', input.note, LIMITS.topicNote, false);
+    return { value: { section_id, name, year_group, note }, errors: c.errors };
   }
 
   /**

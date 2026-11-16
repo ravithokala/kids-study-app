@@ -14,7 +14,8 @@ const Model = (() => {
   /** child_id (last, added later): the child a subject belongs to. A subject with none is an old shared one, which is not shown. */
   const SUBJECT_FIELDS = Object.freeze(['subject_id', 'track', 'name', 'sort', 'deleted', 'version', 'updated_at', 'updated_by', 'child_id']);
   const SECTION_FIELDS = Object.freeze(['section_id', 'subject_id', 'name', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
-  const TOPIC_FIELDS = Object.freeze(['topic_id', 'section_id', 'name', 'year_group', 'sort', 'deleted', 'version', 'updated_at', 'updated_by']);
+  /** note (last, added later): what to remember about the topic itself, e.g. a worked example. */
+  const TOPIC_FIELDS = Object.freeze(['topic_id', 'section_id', 'name', 'year_group', 'sort', 'deleted', 'version', 'updated_at', 'updated_by', 'note']);
   const PROGRESS_FIELDS = Object.freeze(['progress_id', 'child_id', 'topic_id', 'level', 'score', 'on', 'note', 'deleted', 'version', 'updated_at', 'updated_by']);
   /** A spelling word sent by school for one child, for one week (the Monday). status: see domain/words.js. */
   const WORD_FIELDS = Object.freeze(['word_id', 'child_id', 'word', 'week', 'status', 'practised_on', 'deleted', 'version', 'updated_at', 'updated_by', 'note']);

@@ -230,3 +230,5 @@ a.card-link:active { background: var(--soft); }
 .topic-group { margin: 6px 0 10px; }
 .more-fields { border-top: 1px solid var(--line); padding: 4px 0; }
 .more-fields summary { padding: 6px 0; }
+.row-note { color: var(--muted); font-size: 13px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: 16px; }

@@ -173,6 +173,16 @@ export function save(kind, id, fields) {
   return send(`${kind}.save`, { id: id ?? undefined, base_version: existing ? existing.version : 0, fields });
 }
 
+/**
+ * Changes only a topic's note (what to remember about the topic, e.g. a worked example); blank clears it.
+ * @param {string} id @param {string|null} note
+ */
+export function saveTopicNote(id, note) {
+  const t = data.topics[id];
+  if (!t) return Promise.resolve(refuse('That topic is not here any more.'));
+  return save('topic', id, { section_id: t.section_id, name: t.name, year_group: t.year_group, note });
+}
+
 /** @param {Kind} kind @param {string} id */
 export function remove(kind, id) {
   const existing = /** @type {any} */ (data[KINDS[kind]])[id];
@@ -237,9 +247,9 @@ export const keepsComingUp = (childId) => Mocks.recurring(live(data.mocks), chil
 /**
  * Adds a topic to the Maths list: a name, and optionally a group (created if new). One step: the Maths subject and the group
  * are made when needed.
- * @param {string} childId @param {string|null} name @param {string|null} group
+ * @param {string} childId @param {string|null} name @param {string|null} group @param {string|null} note
  */
-export const addMathsTopic = (childId, name, group) => send('maths.addTopic', { child_id: childId, name, group });
+export const addMathsTopic = (childId, name, group, note) => send('maths.addTopic', { child_id: childId, name, group, note });
 
 const SCHOOL_KEY = 'ks.school';
 
